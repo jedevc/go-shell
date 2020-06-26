@@ -13,6 +13,9 @@ func Exec(source io.Reader) int {
 	for {
 		fmt.Print("> ")
 		line, err := reader.ReadString('\n')
+		if len(line) > 0 {
+			fmt.Print(line)
+		}
 		if err != nil {
 			if err != io.EOF {
 				log.Printf("read error: %s", err)
@@ -20,8 +23,6 @@ func Exec(source io.Reader) int {
 			}
 			break
 		}
-
-		fmt.Print(line)
 	}
 
 	return 0
