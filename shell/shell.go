@@ -5,25 +5,34 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 )
 
-func Exec(source io.Reader) int {
-	reader := bufio.NewReader(source)
+type ExecContext struct {
+	Log *log.Logger
+}
 
-	for {
-		fmt.Print("> ")
-		line, err := reader.ReadString('\n')
-		if len(line) > 0 {
-			fmt.Print(line)
+func ExecString(ctx ExecContext, text string) int {
+	return Exec(ctx, strings.NewReader(text), false)
+}
+
+func Exec(ctx ExecContext, source io.Reader, interactive bool) int {
+	parser := &Parser{}
+	parser.Init(bufio.NewReader(source))
+
+	code := 0
+	for !parser.Done() {
+		if interactive {
+			fmt.Print("> ")
 		}
-		if err != nil {
-			if err != io.EOF {
-				log.Printf("read error: %s", err)
-				return 1
-			}
-			break
+
+		node := parser.Parse()
+		if node == nil {
+			continue
 		}
+
+		code = node.Exec(ctx)
 	}
 
-	return 0
+	return code
 }
