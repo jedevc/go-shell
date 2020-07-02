@@ -31,13 +31,8 @@ func (parser *Parser) Error() error {
 	}
 
 	// Handle error
-	if err != nil {
-		parser.err = nil
-		parser.discardTo(TokenEnd, TokenEOF)
-		return err
-	} else {
-		return nil
-	}
+	parser.err = nil
+	return err
 }
 
 func (parser *Parser) Parse() Node {
@@ -57,7 +52,10 @@ func (parser *Parser) line() Node {
 		}
 
 		token := parser.expect(TokenEnd, TokenEOF)
-		if token == nil || token.Ttype == TokenEOF || token.Lexeme == "\n" {
+		if token == nil {
+			parser.discardTo(TokenEnd, TokenEOF)
+			break
+		} else if token.Ttype == TokenEOF || token.Lexeme == "\n" {
 			break
 		}
 	}
