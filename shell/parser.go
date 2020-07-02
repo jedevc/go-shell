@@ -21,7 +21,9 @@ func (parser *Parser) Done() bool {
 }
 
 func (parser *Parser) Error() error {
-	return parser.err
+	err := parser.err
+	parser.err = nil
+	return err
 }
 
 func (parser *Parser) Parse() Node {

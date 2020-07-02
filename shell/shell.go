@@ -27,6 +27,10 @@ func Exec(ctx ExecContext, source io.Reader, interactive bool) int {
 		}
 
 		node := parser.Parse()
+		if err := parser.Error(); err != nil {
+			ctx.Log.Printf("parse error: %s", err)
+			continue
+		}
 		if node == nil {
 			continue
 		}
