@@ -7,9 +7,12 @@ import (
 )
 
 const (
-	TokenWord = iota
-	TokenEnd  = iota
-	TokenEOF  = iota
+	TokenWord           = iota
+	TokenEnd            = iota
+	TokenEOF            = iota
+	TokenRedirIn        = iota
+	TokenRedirOut       = iota
+	TokenRedirAppendOut = iota
 )
 
 type Token struct {
@@ -45,7 +48,11 @@ func (lexer *Lexer) Next() *Token {
 		lexer.advanceLater = true
 		return &Token{TokenEnd, string(lexer.Char)}
 	default:
-		return lexer.readWord()
+		if redir := lexer.readRedir(); redir != nil {
+			return redir
+		} else {
+			return lexer.readWord()
+		}
 	}
 }
 
@@ -69,6 +76,35 @@ func (lexer *Lexer) readWord() *Token {
 	return &Token{TokenWord, builder.String()}
 }
 
+func (lexer *Lexer) readRedir() *Token {
+	switch {
+	case lexer.Char == '>':
+		lexer.Advance()
+		if lexer.Char == '>' {
+			lexer.Advance()
+			return &Token{TokenRedirAppendOut, ""}
+		} else {
+			return &Token{TokenRedirOut, ""}
+		}
+	case lexer.Char == '<':
+		lexer.Advance()
+		return &Token{TokenRedirIn, ""}
+	case '0' <= lexer.Char && lexer.Char <= '9':
+		n := lexer.Char
+
+		peeked := lexer.Peek()
+		if peeked == '>' || peeked == '<' {
+			lexer.Advance()
+			token := lexer.readRedir()
+			token.Lexeme = string(n)
+			return token
+		}
+		return nil
+	default:
+		return nil
+	}
+}
+
 func isBreak(ch rune) bool {
-	return strings.ContainsRune(" \n\t;", ch)
+	return strings.ContainsRune(" \n\t;<>", ch)
 }

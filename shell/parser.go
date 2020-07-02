@@ -3,6 +3,7 @@ package shell
 import (
 	"bufio"
 	"fmt"
+	"strconv"
 )
 
 type Parser struct {
@@ -73,10 +74,61 @@ func (parser *Parser) simple() Node {
 		words = append(words, token.Lexeme)
 	}
 
-	if len(words) == 0 {
+	var node Node
+	if len(words) != 0 {
+		node = &SimpleNode{Words: words}
+	}
+
+	for redir := parser.redirect(node); redir != nil; redir = parser.redirect(node) {
+		node = redir
+	}
+
+	return node
+}
+
+func (parser *Parser) redirect(node Node) Node {
+	token := parser.accept(TokenRedirIn, TokenRedirOut, TokenRedirAppendOut)
+	if token == nil {
 		return nil
-	} else {
-		return &SimpleNode{Words: words}
+	}
+
+	filename := parser.expect(TokenWord)
+	if filename == nil {
+		return nil
+	}
+
+	switch token.Ttype {
+	case TokenRedirIn:
+		var fd int
+		if token.Lexeme == "" {
+			fd = 0
+		} else {
+			fd, _ = strconv.Atoi(token.Lexeme)
+		}
+
+		return &RedirectOutNode{
+			Filename: filename.Lexeme,
+			Fd:       fd,
+			Node:     node,
+		}
+	case TokenRedirAppendOut:
+		fallthrough
+	case TokenRedirOut:
+		var fd int
+		if token.Lexeme == "" {
+			fd = 1
+		} else {
+			fd, _ = strconv.Atoi(token.Lexeme)
+		}
+
+		return &RedirectOutNode{
+			Filename: filename.Lexeme,
+			Fd:       fd,
+			Append:   parser.last.Ttype == TokenRedirAppendOut,
+			Node:     node,
+		}
+	default:
+		panic("unreachable status")
 	}
 }
 

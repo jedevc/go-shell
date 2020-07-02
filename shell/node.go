@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"os"
 	"os/exec"
 )
 
@@ -54,4 +55,62 @@ func (node *GroupNode) Exec(ctx ExecContext) int {
 		code = child.Exec(ctx)
 	}
 	return code
+}
+
+type RedirectInNode struct {
+	Node
+	Filename string
+	Fd       int
+}
+
+type RedirectOutNode struct {
+	Node
+	Filename string
+	Append   bool
+	Fd       int
+}
+
+func (node *RedirectInNode) Exec(ctx ExecContext) int {
+	file, err := os.Open(node.Filename)
+	if err != nil {
+		ctx.Log.Print(err)
+		return 1
+	}
+	defer file.Close()
+
+	switch node.Fd {
+	case 0:
+		ctx.Stdin = file
+	default:
+		ctx.Log.Printf("cannot redirect from %d", node.Fd)
+		return 1
+	}
+
+	return node.Node.Exec(ctx)
+}
+
+func (node *RedirectOutNode) Exec(ctx ExecContext) int {
+	flags := os.O_CREATE | os.O_WRONLY
+	if node.Append {
+		flags |= os.O_APPEND
+	}
+
+	file, err := os.OpenFile(node.Filename, flags, 0644)
+	if err != nil {
+		ctx.Log.Print(err)
+		return 1
+	}
+	defer file.Close()
+
+	switch node.Fd {
+	case 1:
+		ctx.Stdout = file
+	case 2:
+		ctx.Stderr = file
+	default:
+		ctx.Log.Printf("cannot redirect to %d", node.Fd)
+		return 1
+	}
+
+	return node.Node.Exec(ctx)
 }

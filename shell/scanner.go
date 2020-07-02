@@ -44,6 +44,7 @@ func (scanner *ScannerTool) Advance() rune {
 
 	scanner.Last = scanner.Char
 	scanner.Char = ch
+
 	return ch
 }
 
