@@ -25,11 +25,16 @@ func (parser *Parser) Done() bool {
 
 func (parser *Parser) Error() error {
 	if err := parser.lexer.Error(); err != nil {
+		parser.discardTo(TokenEnd, TokenEOF)
 		return err
 	}
-	err := parser.err
-	parser.err = nil
-	return err
+	if parser.err != nil {
+		err := parser.err
+		parser.err = nil
+		parser.discardTo(TokenEnd, TokenEOF)
+		return err
+	}
+	return nil
 }
 
 func (parser *Parser) Parse() Node {
@@ -99,6 +104,12 @@ func (parser *Parser) expect(ttypes ...uint) *Token {
 	}
 	parser.err = fmt.Errorf("expected token, but didn't get it")
 	return nil
+}
+
+func (parser *Parser) discardTo(ttypes ...uint) {
+	for parser.accept(ttypes...) == nil {
+		parser.consume()
+	}
 }
 
 func (parser *Parser) match(ttypes ...uint) bool {
