@@ -13,13 +13,20 @@ type SimpleNode struct {
 }
 
 func (node *SimpleNode) Exec(ctx ExecContext) int {
+	// Strip quotes from words
+	args := make([]string, 0)
+	for _, word := range node.Words {
+		arg := StripQuotes(word)
+		args = append(args, arg)
+	}
+
 	// Execute a builtin
-	if builtin, ok := Builtins[node.Words[0]]; ok {
-		return builtin(ctx, node.Words[0], node.Words[1:]...)
+	if builtin, ok := Builtins[args[0]]; ok {
+		return builtin(ctx, args[0], args[1:]...)
 	}
 
 	// Execute an external command
-	cmd := exec.Command(node.Words[0], node.Words[1:]...)
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdin = ctx.Stdin
 	cmd.Stdout = ctx.Stdout
 	cmd.Stderr = ctx.Stderr
@@ -34,4 +41,17 @@ func (node *SimpleNode) Exec(ctx ExecContext) int {
 	}
 
 	return cmd.ProcessState.ExitCode()
+}
+
+type GroupNode struct {
+	Children []Node
+}
+
+func (node *GroupNode) Exec(ctx ExecContext) int {
+	// Execute all children, returning the last's exit code
+	code := 0
+	for _, child := range node.Children {
+		code = child.Exec(ctx)
+	}
+	return code
 }
