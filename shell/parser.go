@@ -24,17 +24,20 @@ func (parser *Parser) Done() bool {
 }
 
 func (parser *Parser) Error() error {
-	if err := parser.lexer.Error(); err != nil {
-		parser.discardTo(TokenEnd, TokenEOF)
-		return err
+	// Find error (if there are any)
+	err := parser.lexer.Error()
+	if err == nil {
+		err = parser.err
 	}
-	if parser.err != nil {
-		err := parser.err
+
+	// Handle error
+	if err != nil {
 		parser.err = nil
 		parser.discardTo(TokenEnd, TokenEOF)
 		return err
+	} else {
+		return nil
 	}
-	return nil
 }
 
 func (parser *Parser) Parse() Node {

@@ -36,12 +36,12 @@ func (scanner *ScannerTool) Advance() rune {
 	if err == io.EOF {
 		scanner.eof = true
 	} else if err != nil {
-		panic(err)
+		scanner.eof = true
+		scanner.err = err
 	}
 
 	scanner.Last = scanner.Char
 	scanner.Char = ch
-
 	return ch
 }
 
@@ -60,7 +60,9 @@ func (scanner *ScannerTool) ReadUntil(terminator rune) string {
 func (scanner *ScannerTool) Peek() rune {
 	ch, _, err := scanner.reader.ReadRune()
 	if err != nil {
-		panic(err)
+		scanner.eof = true
+		scanner.err = err
+		return ch
 	}
 	_ = scanner.reader.UnreadRune()
 	return ch
