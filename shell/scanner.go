@@ -37,7 +37,7 @@ func (scanner *ScannerTool) Advance() rune {
 		scanner.eof = true
 	} else if err != nil {
 		scanner.eof = true
-		if scanner.err != nil {
+		if scanner.err == nil {
 			scanner.err = err
 		}
 	}
@@ -53,7 +53,7 @@ func (scanner *ScannerTool) ReadUntil(terminator rune) string {
 		builder.WriteRune(scanner.Char)
 		scanner.Advance()
 	}
-	if scanner.eof {
+	if scanner.eof && scanner.err == nil {
 		scanner.err = fmt.Errorf("unexpected EOF while looking for %c", terminator)
 	}
 	return builder.String()
@@ -63,7 +63,7 @@ func (scanner *ScannerTool) Peek() rune {
 	ch, _, err := scanner.reader.ReadRune()
 	if err != nil {
 		scanner.eof = true
-		if scanner.err != nil {
+		if scanner.err == nil {
 			scanner.err = err
 		}
 		return ch

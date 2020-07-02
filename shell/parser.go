@@ -103,7 +103,7 @@ func (parser *Parser) expect(ttypes ...uint) *Token {
 	if token := parser.accept(ttypes...); token != nil {
 		return token
 	}
-	if parser.err != nil {
+	if parser.err == nil {
 		parser.err = fmt.Errorf("expected token, but didn't get it")
 	}
 	return nil
