@@ -37,7 +37,9 @@ func (scanner *ScannerTool) Advance() rune {
 		scanner.eof = true
 	} else if err != nil {
 		scanner.eof = true
-		scanner.err = err
+		if scanner.err != nil {
+			scanner.err = err
+		}
 	}
 
 	scanner.Last = scanner.Char
@@ -61,7 +63,9 @@ func (scanner *ScannerTool) Peek() rune {
 	ch, _, err := scanner.reader.ReadRune()
 	if err != nil {
 		scanner.eof = true
-		scanner.err = err
+		if scanner.err != nil {
+			scanner.err = err
+		}
 		return ch
 	}
 	_ = scanner.reader.UnreadRune()
