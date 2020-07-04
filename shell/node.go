@@ -46,15 +46,15 @@ func (node *SimpleNode) Exec(ctx ExecContext) int {
 		args = append(args, arg)
 	}
 
+	// Execute a builtin
+	if builtin, ok := Builtins[args[0]]; ok {
+		return builtin(ctx, args[0], args[1:]...)
+	}
+
 	// Assign sub-process environment variables
 	env := os.Environ()
 	for key, value := range vars {
 		env = append(env, fmt.Sprintf("%s=%s", key, value))
-	}
-
-	// Execute a builtin
-	if builtin, ok := Builtins[args[0]]; ok {
-		return builtin(ctx, args[0], args[1:]...)
 	}
 
 	// Execute an external command

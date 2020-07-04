@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Command func(ctx ExecContext, name string, args ...string) int
@@ -12,6 +13,7 @@ var Builtins = map[string]Command{
 	"exit":   BuiltinExit,
 	"cd":     BuiltinChangeDirectory,
 	"source": BuiltinSource,
+	"export": BuiltinExport,
 }
 
 func BuiltinExit(ctx ExecContext, name string, args ...string) int {
@@ -75,4 +77,27 @@ func BuiltinSource(ctx ExecContext, name string, args ...string) int {
 		fmt.Fprintf(ctx.Stderr, "%s: too many arguments\n", name)
 		return 1
 	}
+}
+
+func BuiltinExport(ctx ExecContext, name string, args ...string) int {
+	switch len(args) {
+	case 0:
+		for _, env := range os.Environ() {
+			fmt.Fprintln(ctx.Stdout, env)
+		}
+	default:
+		for _, env := range args {
+			parts := strings.SplitN(env, "=", 2)
+			if len(parts) == 2 {
+				os.Setenv(parts[0], parts[1])
+			} else {
+				if value, ok := ctx.Variables[parts[0]]; ok {
+					os.Setenv(parts[0], value)
+				}
+			}
+			delete(ctx.Variables, parts[0])
+		}
+	}
+
+	return 0
 }

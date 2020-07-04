@@ -24,10 +24,14 @@ func Exec(ctx ExecContext, source io.Reader, interactive bool) int {
 	parser := &Parser{}
 	parser.Init(bufio.NewReader(source))
 
+	if _, ok := ctx.Variables["PS1"]; !ok && interactive {
+		ctx.Variables["PS1"] = "> "
+	}
+
 	code := 0
 	for !parser.Done() {
 		if interactive {
-			fmt.Print("> ")
+			fmt.Print(ctx.Variables["PS1"])
 		}
 
 		node := parser.Parse()
