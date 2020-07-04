@@ -49,6 +49,27 @@ func (parser *Parser) line() Node {
 	for {
 		node := parser.simple()
 		if node != nil {
+			for {
+				joiner := parser.accept(TokenPipe)
+				if joiner == nil {
+					break
+				}
+
+				node2 := parser.simple()
+				if node2 == nil {
+					if parser.err == nil {
+						parser.err = fmt.Errorf("required command after joiner")
+					}
+					parser.discardTo(TokenEnd, TokenEOF)
+					return nil
+				}
+
+				switch joiner.Ttype {
+				case TokenPipe:
+					node = &PipeNode{First: node, Second: node2}
+				}
+			}
+
 			nodes = append(nodes, node)
 		}
 

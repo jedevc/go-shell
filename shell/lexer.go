@@ -13,6 +13,7 @@ const (
 	TokenRedirIn        = iota
 	TokenRedirOut       = iota
 	TokenRedirAppendOut = iota
+	TokenPipe           = iota
 )
 
 type Token struct {
@@ -47,6 +48,9 @@ func (lexer *Lexer) Next() *Token {
 	case ';', '\n':
 		lexer.advanceLater = true
 		return &Token{TokenEnd, string(lexer.Char)}
+	case '|':
+		lexer.Advance()
+		return &Token{TokenPipe, ""}
 	default:
 		if redir := lexer.readRedir(); redir != nil {
 			return redir
@@ -106,5 +110,5 @@ func (lexer *Lexer) readRedir() *Token {
 }
 
 func isBreak(ch rune) bool {
-	return strings.ContainsRune(" \n\t;<>", ch)
+	return strings.ContainsRune(" \n\t;<>|", ch)
 }

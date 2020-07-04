@@ -1,8 +1,11 @@
 package shell
 
 import (
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"sync"
 )
 
 type Node interface {
@@ -113,4 +116,41 @@ func (node *RedirectOutNode) Exec(ctx ExecContext) int {
 	}
 
 	return node.Node.Exec(ctx)
+}
+
+type PipeNode struct {
+	First  Node
+	Second Node
+}
+
+func (node *PipeNode) Exec(ctx ExecContext) int {
+	reader, writer := io.Pipe()
+
+	code := 0
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		newCtx := ctx
+		newCtx.Stdout = writer
+		node.First.Exec(newCtx)
+		writer.Close()
+
+		wg.Done()
+	}()
+	go func() {
+		newCtx := ctx
+		newCtx.Stdin = reader
+		code = node.Second.Exec(newCtx)
+
+		_, err := io.Copy(ioutil.Discard, reader)
+		if err != nil {
+			ctx.Log.Print(err)
+		}
+
+		wg.Done()
+	}()
+	wg.Wait()
+
+	return code
 }
