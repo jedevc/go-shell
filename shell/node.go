@@ -1,7 +1,6 @@
 package shell
 
 import (
-	"os"
 	"os/exec"
 )
 
@@ -21,9 +20,9 @@ func (node *SimpleNode) Exec(ctx ExecContext) int {
 
 	// Execute an external command
 	cmd := exec.Command(node.Words[0], node.Words[1:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdin = ctx.Stdin
+	cmd.Stdout = ctx.Stdout
+	cmd.Stderr = ctx.Stderr
 	err := cmd.Run()
 
 	if err != nil {
