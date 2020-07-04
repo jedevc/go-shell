@@ -42,8 +42,11 @@ func (node *SimpleNode) Exec(ctx ExecContext) int {
 	// Strip quotes from words
 	args := make([]string, 0)
 	for _, word := range node.Words {
-		arg := StripQuotes(Expand(ctx, word))
-		args = append(args, arg)
+		expanded := Expand(ctx, word)
+		for _, arg := range Split(expanded) {
+			arg = StripQuotes(arg)
+			args = append(args, arg)
+		}
 	}
 
 	// Execute a builtin

@@ -79,6 +79,11 @@ func (lexer *Lexer) readWord() *Token {
 				part := lexer.ReadUntil('}')
 				fmt.Fprintf(builder, "{%s}", part)
 				lexer.Advance()
+			case '(':
+				lexer.Advance()
+				part := lexer.ReadUntil(')')
+				fmt.Fprintf(builder, "(%s)", part)
+				lexer.Advance()
 			}
 		default:
 			builder.WriteRune(lexer.Char)
