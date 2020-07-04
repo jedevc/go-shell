@@ -19,10 +19,11 @@ func main() {
 	logger := log.New(os.Stderr, fmt.Sprintf("%s: ", NAME), 0)
 
 	ctx := shell.ExecContext{
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-		Log:    logger,
+		Variables: map[string]string{},
+		Stdin:     os.Stdin,
+		Stdout:    os.Stdout,
+		Stderr:    os.Stderr,
+		Log:       logger,
 	}
 
 	var code int

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type Parser struct {
@@ -91,13 +92,18 @@ func (parser *Parser) line() Node {
 
 func (parser *Parser) simple() Node {
 	words := make([]string, 0)
+	assigns := make([]string, 0)
 	for token := parser.accept(TokenWord); token != nil; token = parser.accept(TokenWord) {
-		words = append(words, token.Lexeme)
+		if strings.Contains(token.Lexeme, "=") && len(words) == 0 {
+			assigns = append(assigns, token.Lexeme)
+		} else {
+			words = append(words, token.Lexeme)
+		}
 	}
 
 	var node Node
-	if len(words) != 0 {
-		node = &SimpleNode{Words: words}
+	if len(words) != 0 || len(assigns) != 0 {
+		node = &SimpleNode{Words: words, Assignments: assigns}
 	}
 
 	for redir := parser.redirect(node); redir != nil; redir = parser.redirect(node) {

@@ -9,10 +9,11 @@ import (
 )
 
 type ExecContext struct {
-	Stdin  io.Reader
-	Stdout io.Writer
-	Stderr io.Writer
-	Log    *log.Logger
+	Variables map[string]string
+	Stdin     io.Reader
+	Stdout    io.Writer
+	Stderr    io.Writer
+	Log       *log.Logger
 }
 
 func ExecString(ctx ExecContext, text string) int {

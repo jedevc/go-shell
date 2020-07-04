@@ -1,10 +1,12 @@
 package shell
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 )
 
@@ -13,15 +15,41 @@ type Node interface {
 }
 
 type SimpleNode struct {
-	Words []string
+	Assignments []string
+	Words       []string
 }
 
 func (node *SimpleNode) Exec(ctx ExecContext) int {
+	// Evaluate local variables
+	vars := make(map[string]string)
+	for _, assignment := range node.Assignments {
+		parts := strings.SplitN(assignment, "=", 2)
+		vars[parts[0]] = StripQuotes(Expand(ctx, parts[1]))
+	}
+
+	// Move local variables into global
+	if len(node.Words) == 0 {
+		for key, value := range vars {
+			if _, ok := os.LookupEnv(key); ok {
+				os.Setenv(key, value)
+			} else {
+				ctx.Variables[key] = value
+			}
+		}
+		return 0
+	}
+
 	// Strip quotes from words
 	args := make([]string, 0)
 	for _, word := range node.Words {
-		arg := StripQuotes(word)
+		arg := StripQuotes(Expand(ctx, word))
 		args = append(args, arg)
+	}
+
+	// Assign sub-process environment variables
+	env := os.Environ()
+	for key, value := range vars {
+		env = append(env, fmt.Sprintf("%s=%s", key, value))
 	}
 
 	// Execute a builtin
@@ -34,6 +62,7 @@ func (node *SimpleNode) Exec(ctx ExecContext) int {
 	cmd.Stdin = ctx.Stdin
 	cmd.Stdout = ctx.Stdout
 	cmd.Stderr = ctx.Stderr
+	cmd.Env = env
 	err := cmd.Run()
 
 	if err != nil {
@@ -74,7 +103,7 @@ type RedirectOutNode struct {
 }
 
 func (node *RedirectInNode) Exec(ctx ExecContext) int {
-	file, err := os.Open(node.Filename)
+	file, err := os.Open(Expand(ctx, node.Filename))
 	if err != nil {
 		ctx.Log.Print(err)
 		return 1
@@ -98,7 +127,7 @@ func (node *RedirectOutNode) Exec(ctx ExecContext) int {
 		flags |= os.O_APPEND
 	}
 
-	file, err := os.OpenFile(node.Filename, flags, 0644)
+	file, err := os.OpenFile(Expand(ctx, node.Filename), flags, 0644)
 	if err != nil {
 		ctx.Log.Print(err)
 		return 1
